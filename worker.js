@@ -171,7 +171,11 @@ Rules:
 - Add 3 to 5 links, written naturally in sentences, chosen only from:\n${linkList}
 - At most one link from this list, only if it truly helps the reader:\n${sellList}
 - End with <h2>Quick answers</h2> then 4 or 5 pairs of <h3>question?</h3><p>answer</p>.
-- Length: 1100 to 1400 words.` },
+- Length: 1100 to 1400 words.
+- Never say the same thing twice. Every section must add a new fact or example. No section may repeat an earlier paragraph.
+- Headings must be specific to the question. No "Introduction", "Overview", "Conclusion" or "What is X?" headings.
+- Take a side: say plainly which option you would pick for a small shop and why, in "My take".
+- Use plain, concrete wording a shop owner would use. No filler like "a wide range of features" or "ease of use".` },
   ], 3500);
 
   // d. humanize pass (separate prompt)
@@ -206,6 +210,9 @@ ${draft}` },
 async function qualityGate(env, post, q) {
   const text = strip(post.html);
   if (post.words < MIN_WORDS) return `too short (${post.words} words)`;
+  if (/<h2>\s*(introduction|overview|conclusion|summary)\b/i.test(post.html)) return "generic heading";
+  const sents = text.split(/(?<=[.!?])\s+/).map(s => s.trim().toLowerCase()).filter(s => s.length > 70);
+  const seen = new Set(); for (const s of sents) { if (seen.has(s)) return "repeats itself: " + s.slice(0, 40); seen.add(s); }
   if (PLACEHOLDER.test(post.html)) return "placeholder found: " + String(post.html.match(PLACEHOLDER)[0]).slice(0, 40);
   if (BANNED.test(text)) return "AI phrase left: " + text.match(BANNED)[0];
   if (/\d+(\.\d+)?\s?%|\bpercent\b/i.test(text)) return "percentage (likely invented)";
