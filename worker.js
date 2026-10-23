@@ -251,7 +251,7 @@ async function review(req, env) {
   const form = req.method === "POST" ? await req.formData() : null;
   const secret = form ? form.get("secret") : new URL(req.url).searchParams.get("secret");
   if (!env.CRON_SECRET || secret !== env.CRON_SECRET)
-    return html(`<!doctype html><meta name="viewport" content="width=device-width"><body style="font:16px system-ui;background:#000;color:#F5F5F7;padding:20px"><h1>Blog review</h1>${secret != null ? `<p style="color:#C8F031">Wrong password. Typed ${String(secret).length} characters; saved password has ${env.CRON_SECRET ? String(env.CRON_SECRET).length : "NO"} characters. (temporary hint)</p>` : ""}<form><input name="secret" type="password" placeholder="CRON_SECRET" style="padding:12px;width:100%"><button style="background:#C8F031;border:0;padding:14px 20px;font-weight:700;margin-top:8px">Open</button></form>`);
+    return html(`<!doctype html><meta name="viewport" content="width=device-width"><body style="font:16px system-ui;background:#000;color:#F5F5F7;padding:20px"><h1>Blog review</h1><form><input name="secret" type="password" placeholder="CRON_SECRET" style="padding:12px;width:100%"><button style="background:#C8F031;border:0;padding:14px 20px;font-weight:700;margin-top:8px">Open</button></form>`);
   if (form && (form.get("slug") || form.get("act") === "run")) {
     const slug = String(form.get("slug"));
     if (form.get("act") === "run") { const out = await runOnce(env); return html(`<body style="font:16px system-ui;background:#000;color:#F5F5F7;padding:20px"><pre>${esc(JSON.stringify(out, null, 2))}</pre><p><a style="color:#C8F031" href="/api/blog/review">Back</a> (log in again)</p>`); }

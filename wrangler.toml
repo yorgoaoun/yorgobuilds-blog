@@ -25,4 +25,4 @@ pattern = "yorgobuilds.com/blog-sitemap.xml"
 zone_name = "yorgobuilds.com"
 
 [vars]
-REVIEW = "0"
+REVIEW = "1"
