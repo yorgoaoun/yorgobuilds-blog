@@ -58,6 +58,13 @@ export default {
     ctx.waitUntil(ensureDb(env).then(() => runOnce(env)));
   },
   async fetch(req, env) {
+    try { return await handle(req, env); }
+    catch (e) { return new Response("Robot error: " + (e && e.message || e), { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } }); }
+  },
+};
+
+async function handle(req, env) {
+  {
     await ensureDb(env);
     const url = new URL(req.url);
     const p = url.pathname.replace(/\/+$/, "") || "/";
@@ -75,8 +82,8 @@ export default {
     m = p.match(/^\/blog\/([a-z0-9-]+)$/);
     if (m) return postPage(env, m[1]);
     return new Response("Not found", { status: 404 });
-  },
-};
+  }
+}
 
 // ---------- the writer job ----------
 async function runOnce(env) {
