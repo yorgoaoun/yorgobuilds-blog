@@ -97,8 +97,9 @@ async function runOnce(env) {
   await env.DB.prepare("UPDATE blog_questions SET status='writing' WHERE id=?").bind(q.id).run();
 
   try {
-    const post = await write(env, q);
-    const fail = await qualityGate(env, post, q);
+    let post = await write(env, q);
+    let fail = await qualityGate(env, post, q);
+    if (fail) { post = await write(env, q); const again = await qualityGate(env, post, q); fail = again && `${fail} / retry: ${again}`; }
     if (fail) {
       await env.DB.prepare("UPDATE blog_questions SET status='failed', note=? WHERE id=?").bind(fail, q.id).run();
       return { failed: q.question, reason: fail };
@@ -205,7 +206,7 @@ ${draft}` },
 async function qualityGate(env, post, q) {
   const text = strip(post.html);
   if (post.words < MIN_WORDS) return `too short (${post.words} words)`;
-  if (PLACEHOLDER.test(post.html)) return "placeholder found";
+  if (PLACEHOLDER.test(post.html)) return "placeholder found: " + String(post.html.match(PLACEHOLDER)[0]).slice(0, 40);
   if (BANNED.test(text)) return "AI phrase left: " + text.match(BANNED)[0];
   if (/\d+(\.\d+)?\s?%|\bpercent\b/i.test(text)) return "percentage (likely invented)";
   const nums = [...text.matchAll(/\$\s?([\d,]+)|\b(\d{2,})\b/g)].map(m => (m[1] || m[2]).replace(/,/g, ""));
@@ -252,9 +253,10 @@ async function review(req, env) {
   const secret = form ? form.get("secret") : new URL(req.url).searchParams.get("secret");
   if (!env.CRON_SECRET || secret !== env.CRON_SECRET)
     return html(`<!doctype html><meta name="viewport" content="width=device-width"><body style="font:16px system-ui;background:#000;color:#F5F5F7;padding:20px"><h1>Blog review</h1><form><input name="secret" type="password" placeholder="CRON_SECRET" style="padding:12px;width:100%"><button style="background:#C8F031;border:0;padding:14px 20px;font-weight:700;margin-top:8px">Open</button></form>`);
-  if (form && (form.get("slug") || form.get("act") === "run")) {
+  if (form && (form.get("slug") || form.get("act") === "run" || form.get("act") === "requeue")) {
     const slug = String(form.get("slug"));
     if (form.get("act") === "run") { const out = await runOnce(env); return html(`<body style="font:16px system-ui;background:#000;color:#F5F5F7;padding:20px"><pre>${esc(JSON.stringify(out, null, 2))}</pre><p><a style="color:#C8F031" href="/api/blog/review">Back</a> (log in again)</p>`); }
+    if (form.get("act") === "requeue") await env.DB.prepare("UPDATE blog_questions SET status='queued' WHERE status='failed'").run();
     if (form.get("act") === "approve") await env.DB.prepare("UPDATE posts SET status='live', created_at=? WHERE slug=?").bind(new Date().toISOString(), slug).run();
     else await env.DB.prepare("DELETE FROM posts WHERE slug=?").bind(slug).run();
   }
@@ -264,7 +266,7 @@ async function review(req, env) {
 <form method="post"><input type="hidden" name="secret" value="${esc(secret)}"><input type="hidden" name="slug" value="${esc(p.slug)}">
 <button name="act" value="approve" style="background:#C8F031;border:0;padding:12px 18px;font-weight:700">Publish</button>
 <button name="act" value="delete" style="background:#333;color:#fff;border:0;padding:12px 18px;margin-left:8px">Delete</button></form></div>`).join("");
-  return html(`<!doctype html><meta name="viewport" content="width=device-width"><title>Blog review</title><body style="font:16px system-ui;background:#000;color:#F5F5F7;padding:20px;max-width:720px"><h1>Drafts waiting (${r.results.length})</h1>${items || "<p>Nothing waiting.</p>"}<form method="post"><input type="hidden" name="secret" value="${esc(secret)}"><button name="act" value="run" style="background:#C8F031;border:0;padding:14px 20px;font-weight:700;margin-top:24px">Write one post now (takes about 1 minute)</button></form>`);
+  return html(`<!doctype html><meta name="viewport" content="width=device-width"><title>Blog review</title><body style="font:16px system-ui;background:#000;color:#F5F5F7;padding:20px;max-width:720px"><h1>Drafts waiting (${r.results.length})</h1>${items || "<p>Nothing waiting.</p>"}<form method="post"><input type="hidden" name="secret" value="${esc(secret)}"><button name="act" value="run" style="background:#C8F031;border:0;padding:14px 20px;font-weight:700;margin-top:24px">Write one post now (takes about 1 minute)</button><button name="act" value="requeue" style="background:#333;color:#fff;border:0;padding:14px 20px;margin:24px 0 0 8px">Retry failed questions</button></form>`);
 }
 
 // ---------- pages ----------
