@@ -1,0 +1,28 @@
+name = "yorgobuilds-blog"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yorgobuilds-blog"
+
+[triggers]
+crons = ["0 */6 * * *"]
+
+[[routes]]
+pattern = "yorgobuilds.com/blog*"
+zone_name = "yorgobuilds.com"
+
+[[routes]]
+pattern = "yorgobuilds.com/api/blog/*"
+zone_name = "yorgobuilds.com"
+
+[[routes]]
+pattern = "yorgobuilds.com/blog-sitemap.xml"
+zone_name = "yorgobuilds.com"
+
+[vars]
+REVIEW = "0"
