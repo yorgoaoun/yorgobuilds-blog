@@ -456,6 +456,7 @@ function cleanHtml(s) {
   s = s.replace(/<(h2|h3|p|ul|ol|li|strong)\b[^>]*>/gi, "<$1>");
   let sells = 0;
   s = s.replace(/<a href="(\/(?:prices|quote|google-maps-setup)\.html)">([\s\S]*?)<\/a>/g, (m, h, t) => (++sells > 1 ? t : m));
+  s = s.replace(/<h2>\s*(introduction|overview|conclusion|summary)\b[^<]*<\/h2>/gi, "");
   return s.replace(/<p>\s*<\/p>/g, "").trim();
 }
 const strip = s => String(s).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
