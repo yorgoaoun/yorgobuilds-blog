@@ -118,7 +118,7 @@ async function runOnce(env) {
 
 // Oldest queued question whose topic wasn't published in the last 7 days.
 async function nextQuestion(env) {
-  return env.DB.prepare(`SELECT * FROM blog_questions WHERE status='queued'
+  return env.DB.prepare(`SELECT * FROM blog_questions WHERE status='queued' AND intent != 'compare'
     AND (topic IS NULL OR topic NOT IN (SELECT topic FROM posts WHERE created_at >= datetime('now','-7 days') AND topic IS NOT NULL))
     ORDER BY priority DESC, id LIMIT 1`).first();
 }
@@ -172,6 +172,8 @@ Rules:
 - At most one link from this list, only if it truly helps the reader:\n${sellList}
 - End with <h2>Quick answers</h2> then 4 or 5 pairs of <h3>question?</h3><p>answer</p>.
 - Length: 1100 to 1400 words.
+- Say nothing about other companies' features, prices, fees, payment methods, security or support unless it is in the facts above. If you don't know, leave it out. Never write "based on my experience" or invent clients, shops or cities.
+- Add 3 to 5 links only where a reader would really click them. Do not add a "More information on..." sentence to every section.
 - Never say the same thing twice. Every section must add a new fact or example. No section may repeat an earlier paragraph.
 - Headings must be specific to the question. No "Introduction", "Overview", "Conclusion" or "What is X?" headings.
 - Take a side: say plainly which option you would pick for a small shop and why, in "My take".
