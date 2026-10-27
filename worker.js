@@ -314,9 +314,18 @@ ${AUTHOR}
   }));
 }
 
+// Hand-written guides live on the Pages site as static .html files.
+const GUIDES = [
+  ["/shopify-vs-salla-saudi-arabia.html", "Shopify vs Salla for selling in Saudi Arabia", "Payments, fees and Arabic support checked on each company's own pages, plus my pick."],
+  ["/shopify-vs-woocommerce-small-store.html", "Shopify vs WooCommerce for a small online store", "WooCommerce is free, but hosting and upkeep are not. Real prices and which one I pick."],
+  ["/shopify-vs-wix-clothing-store.html", "Shopify vs Wix for selling clothes online", "Real prices from both, what sizes and stock need, and which I pick for a small shop."],
+  ["/wix-vs-squarespace-vs-freelancer.html", "Wix vs Squarespace vs hiring a freelancer", "Real prices, three-year cost, and who each option suits. Honest take included."],
+];
+
 async function blogIndex(env) {
   const r = await env.DB.prepare("SELECT slug,title,meta_desc,created_at FROM posts WHERE status='live' ORDER BY created_at DESC LIMIT 200").all();
-  const cards = r.results.map((p, i) => `<a class="jc" href="/blog/${p.slug}"><span class="n">${String(r.results.length - i).padStart(2, "0")}</span><h2>${esc(p.title)}</h2><p>${esc(p.meta_desc)}</p><span>READ →</span></a>`).join("");
+  const items = [...r.results.map(p => [`/blog/${p.slug}`, p.title, p.meta_desc]), ...GUIDES];
+  const cards = items.map(([href, title, desc], i) => `<a class="jc" href="${href}"><span class="n">${String(items.length - i).padStart(2, "0")}</span><h2>${esc(title)}</h2><p>${esc(desc)}</p><span>READ →</span></a>`).join("");
   return html(page({
     title: "Blog: website answers for small businesses · Yorgo Builds", desc: "Plain answers to the questions small business owners ask about websites, online stores, Google Maps and Instagram.",
     url: SITE + "/blog", ld: [],
